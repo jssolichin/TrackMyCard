@@ -1,4 +1,4 @@
-#!/set -e
+#!/bin/zsh -e
 
 # ci_post_clone.sh
 # TrackMyCard
