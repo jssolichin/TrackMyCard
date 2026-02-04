@@ -528,6 +528,8 @@
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = TrackUpcoming;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.finance";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
@@ -567,6 +569,8 @@
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = TrackUpcoming;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.finance";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
@@ -695,7 +699,7 @@
 				DEVELOPMENT_TEAM = GDDF4Q62SU;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = TrackMyCardWidget/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = TrackMyCardWidget;
+				INFOPLIST_KEY_CFBundleDisplayName = TrackUpcoming;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				IPHONEOS_DEPLOYMENT_TARGET = 18.4;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -725,7 +729,7 @@
 				DEVELOPMENT_TEAM = GDDF4Q62SU;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = TrackMyCardWidget/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = TrackMyCardWidget;
+				INFOPLIST_KEY_CFBundleDisplayName = TrackUpcoming;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				IPHONEOS_DEPLOYMENT_TARGET = 18.4;
 				LD_RUNPATH_SEARCH_PATHS = (

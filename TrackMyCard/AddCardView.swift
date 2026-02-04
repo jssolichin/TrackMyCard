@@ -18,41 +18,41 @@ struct AddCardView: View {
                 Section {
                     if isOwned {
                         // Summary view for owned cards
-                        Text("✅ You own this card")
-                            .font(.subheadline)
-                            .foregroundStyle(.green)
-                            .listRowBackground(Color.green.opacity(0.1))
-                    } else {
-                        // Detailed benefit preview for unowned cards
-                        ForEach(cardTemplate.benefits) { benefit in
-                            HStack {
-                                VStack(alignment: .leading) {
-                                    Text(benefit.name)
-                                        .font(.subheadline)
-                                    Text(benefit.notes)
-                                        .font(.caption2)
-                                        .foregroundStyle(.secondary)
-                                }
-                                Spacer()
-                                VStack(alignment: .trailing) {
-                                    Text(benefit.amount, format: .currency(code: "USD"))
-                                    Text(benefit.period.rawValue)
-                                        .font(.caption2)
-                                        .foregroundStyle(.secondary)
-                                }
+                        HStack {
+                            Text("✅ You own this card")
+                                .font(.subheadline)
+                                .foregroundStyle(.green)
+                            Spacer()
+                        }
+                        .listRowBackground(Color.green.opacity(0.1))
+                    }
+                    
+                    // Detailed benefit preview for all cards
+                    ForEach(cardTemplate.benefits) { benefit in
+                        HStack {
+                            VStack(alignment: .leading) {
+                                Text(benefit.name)
+                                    .font(.subheadline)
+                                Text(benefit.notes)
+                                    .font(.caption2)
+                                    .foregroundStyle(.secondary)
+                            }
+                            Spacer()
+                            VStack(alignment: .trailing) {
+                                Text(benefit.amount, format: .currency(code: "USD"))
+                                Text(benefit.period.rawValue)
+                                    .font(.caption2)
+                                    .foregroundStyle(.secondary)
                             }
                         }
                     }
                 } header: {
-                    HStack {
-                        VStack(alignment: .leading) {
-                            Text(cardTemplate.issuer)
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                            Text(cardTemplate.name)
-                                .font(.headline)
-                                .foregroundStyle(.primary)
-                        }
+                    HStack(spacing: 12) {
+                        CardIconView(cardName: cardTemplate.name, issuer: cardTemplate.issuer, size: 16)
+                        
+                        Text(cardTemplate.name)
+                            .font(.headline)
+                            .foregroundStyle(.primary)
                         
                         Spacer()
                         
@@ -68,6 +68,7 @@ struct AddCardView: View {
                         .tint(isOwned ? .red : .blue)
                         .controlSize(.small)
                     }
+                    .padding(.vertical, 4)
                 }
             }
             .navigationTitle("Card Catalog")

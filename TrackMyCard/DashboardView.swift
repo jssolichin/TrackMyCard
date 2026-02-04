@@ -5,6 +5,7 @@ struct DashboardView: View {
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \CardBenefit.nextResetDate, order: .forward) private var benefits: [CardBenefit]
     @State private var showingAddSheet = false
+    @State private var expandedGroups: Set<String> = []
 
     var availableBenefits: [CardBenefit] {
         benefits.filter { !$0.isUsed }
@@ -13,18 +14,47 @@ struct DashboardView: View {
     var usedBenefits: [CardBenefit] {
         benefits.filter { $0.isUsed }
     }
+    
+    private func groupedBenefits(_ benefits: [CardBenefit]) -> [BenefitGroup] {
+        let groups = Dictionary(grouping: benefits, by: { $0.name })
+        return groups.map { BenefitGroup(name: $0.key, benefits: $0.value) }
+            .sorted { $0.earliestResetDate < $1.earliestResetDate }
+    }
 
     var body: some View {
         NavigationStack {
             List {
                 if !availableBenefits.isEmpty {
                     Section(header: Text("Available")) {
-                        ForEach(availableBenefits) { benefit in
-                            BenefitRow(benefit: benefit)
+                        let groups = groupedBenefits(availableBenefits)
+                        ForEach(groups) { group in
+                            if group.benefits.count > 1 {
+                                VStack(alignment: .leading, spacing: 0) {
+                                    BenefitGroupSummaryRow(group: group, isExpanded: expandedGroups.contains(group.id)) {
+                                        if expandedGroups.contains(group.id) {
+                                            expandedGroups.remove(group.id)
+                                        } else {
+                                            expandedGroups.insert(group.id)
+                                        }
+                                    }
+                                    
+                                    if expandedGroups.contains(group.id) {
+                                        ForEach(group.benefits.sorted { $0.nextResetDate < $1.nextResetDate }) { benefit in
+                                            BenefitRow(benefit: benefit, isChild: true)
+                                                .padding(.leading, 10)
+                                        }
+                                    }
+                                }
+                            } else {
+                                BenefitRow(benefit: group.benefits[0])
+                            }
                         }
                         .onDelete { indexSet in
                             for index in indexSet {
-                                modelContext.delete(availableBenefits[index])
+                                let group = groups[index]
+                                for benefit in group.benefits {
+                                    modelContext.delete(benefit)
+                                }
                             }
                         }
                     }
@@ -32,19 +62,42 @@ struct DashboardView: View {
                 
                 if !usedBenefits.isEmpty {
                     Section(header: Text("Used")) {
-                        ForEach(usedBenefits) { benefit in
-                            BenefitRow(benefit: benefit)
+                        let groups = groupedBenefits(usedBenefits)
+                        ForEach(groups) { group in
+                            if group.benefits.count > 1 {
+                                VStack(alignment: .leading, spacing: 0) {
+                                    BenefitGroupSummaryRow(group: group, isExpanded: expandedGroups.contains(group.id)) {
+                                        if expandedGroups.contains(group.id) {
+                                            expandedGroups.remove(group.id)
+                                        } else {
+                                            expandedGroups.insert(group.id)
+                                        }
+                                    }
+                                    
+                                    if expandedGroups.contains(group.id) {
+                                        ForEach(group.benefits.sorted { $0.nextResetDate < $1.nextResetDate }) { benefit in
+                                            BenefitRow(benefit: benefit, isChild: true)
+                                                .padding(.leading, 10)
+                                        }
+                                    }
+                                }
+                            } else {
+                                BenefitRow(benefit: group.benefits[0])
+                            }
                         }
                         .onDelete { indexSet in
                             for index in indexSet {
-                                modelContext.delete(usedBenefits[index])
+                                let group = groups[index]
+                                for benefit in group.benefits {
+                                    modelContext.delete(benefit)
+                                }
                             }
                         }
                     }
                 }
                 
                 if benefits.isEmpty {
-                    ContentUnavailableView("No Benefits Tracked", systemImage: "creditcard.and.123", description: Text("Add your credit card benefits to start tracking."))
+                    ContentUnavailableView("No Benefits Tracked", systemImage: "creditcard.and.123", description: Text("Click on the second tab to add example benefits, or the + to add your own!"))
                 }
             }
             .navigationTitle("My Benefits")
@@ -72,8 +125,89 @@ struct DashboardView: View {
     }
 }
 
+struct BenefitGroup: Identifiable {
+    let name: String
+    let benefits: [CardBenefit]
+    var id: String { name }
+    
+    var totalAmount: Double {
+        benefits.reduce(0) { $0 + $1.amount }
+    }
+    
+    var earliestResetDate: Date {
+        benefits.map { $0.nextResetDate }.min() ?? Date()
+    }
+    
+    var isAllUsed: Bool {
+        benefits.allSatisfy { $0.isUsed }
+    }
+}
+
+struct BenefitGroupSummaryRow: View {
+    let group: BenefitGroup
+    let isExpanded: Bool
+    let onToggleExpand: () -> Void
+    
+    var body: some View {
+        HStack(alignment: .top) {
+            VStack(alignment: .leading, spacing: 4) {
+                Text(group.name)
+                    .font(.headline)
+                
+                HStack(spacing: 6) {
+                    HStack(spacing: -4) {
+                        let cardNames = Array(Set(group.benefits.compactMap { $0.userCard?.name ?? $0.cardName })).sorted().prefix(5)
+                        ForEach(Array(cardNames), id: \.self) { cardName in
+                            CardIconView(cardName: cardName, issuer: group.benefits.first(where: { ($0.userCard?.name ?? $0.cardName) == cardName })?.userCard?.issuer, size: 14)
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 2)
+                                        .stroke(.background, lineWidth: 1)
+                                )
+                        }
+                    }
+                    .frame(minWidth: 40, alignment: .leading)
+                    
+                    Text("\(group.benefits.count) items")
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                }
+            }
+            
+            Spacer()
+            
+            VStack(alignment: .trailing, spacing: 4) {
+                Text(group.totalAmount, format: .currency(code: "USD"))
+                    .fontWeight(.bold)
+                
+                Button {
+                    let targetState = !group.isAllUsed
+                    withAnimation {
+                        for benefit in group.benefits {
+                            benefit.isUsed = targetState
+                        }
+                    }
+                } label: {
+                    Image(systemName: group.isAllUsed ? "checkmark.circle.fill" : "circle")
+                        .resizable()
+                        .frame(width: 24, height: 24)
+                        .foregroundStyle(group.isAllUsed ? .green : .gray)
+                }
+                .buttonStyle(.plain)
+            }
+        }
+        .contentShape(Rectangle())
+        .onTapGesture {
+            withAnimation(.spring(response: 0.35, dampingFraction: 0.7)) {
+                onToggleExpand()
+            }
+        }
+        .padding(.vertical, 4)
+    }
+}
+
 struct BenefitRow: View {
     @Bindable var benefit: CardBenefit
+    var isChild: Bool = false
     
     var daysRemaining: Int {
         let calendar = Calendar.current
@@ -87,56 +221,65 @@ struct BenefitRow: View {
     }
     
     var body: some View {
-        HStack {
+        HStack(alignment: .top) {
             VStack(alignment: .leading, spacing: 4) {
-                Text(benefit.name)
-                    .font(.headline)
-                Text("\(benefit.cardName) • \(benefit.period.rawValue)")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                if !isChild {
+                    Text(benefit.name)
+                        .font(.headline)
+                }
+                
                 if !benefit.notes.isEmpty {
                     Text(benefit.notes)
-                        .font(.caption2)
+                        .font(.system(size: 10))
                         .foregroundStyle(.secondary)
                         .lineLimit(1)
+                }
+                
+                HStack(spacing: 6) {
+                    CardIconView(cardName: benefit.userCard?.name ?? benefit.cardName, issuer: benefit.userCard?.issuer, size: 14)
+                    
+                    Text(benefit.period.rawValue)
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
                 }
             }
             
             Spacer()
             
-            VStack(alignment: .trailing) {
+            VStack(alignment: .trailing, spacing: 4) {
                 Text(benefit.amount, format: .currency(code: "USD"))
-                    .fontWeight(.bold)
+                    .fontWeight(isChild ? .semibold : .bold)
                 
-                if benefit.isUsed {
-                    Text("Resets \(benefit.nextResetDate, format: .dateTime.month().day())")
-                        .font(.caption2)
-                        .foregroundStyle(.secondary)
-                } else {
-                    // Available: Show urgency
-                    Text(daysRemaining == 0 ? "Ends Today" : "Ends in \(daysRemaining)d")
-                        .font(.caption2)
-                        .fontWeight(.semibold)
-                        .foregroundStyle(urgencyColor)
+                HStack(spacing: 8) {
+                    if benefit.isUsed {
+                        Text("Resets \(benefit.nextResetDate, format: .dateTime.month().day())")
+                            .font(.system(size: 10))
+                            .foregroundStyle(.secondary)
+                    } else {
+                        Text(daysRemaining == 0 ? "Today" : "\(daysRemaining)d")
+                            .font(.system(size: 10))
+                            .fontWeight(.semibold)
+                            .foregroundStyle(urgencyColor)
+                    }
+                    
+                    Button {
+                        withAnimation {
+                            benefit.isUsed.toggle()
+                        }
+                    } label: {
+                        Image(systemName: benefit.isUsed ? "checkmark.circle.fill" : "circle")
+                            .resizable()
+                            .frame(width: 24, height: 24)
+                            .foregroundStyle(benefit.isUsed ? .green : .gray)
+                    }
+                    .buttonStyle(.plain)
                 }
             }
-            
-            Button {
-                withAnimation {
-                    benefit.isUsed.toggle()
-                }
-            } label: {
-                Image(systemName: benefit.isUsed ? "checkmark.circle.fill" : "circle")
-                    .resizable()
-                    .frame(width: 24, height: 24)
-                    .foregroundStyle(benefit.isUsed ? .green : .gray)
-            }
-            .buttonStyle(.plain) // Important for List row clicks
-            .padding(.leading, 8)
         }
         .padding(.vertical, 4)
     }
 }
+
 
 #Preview {
     DashboardView()
