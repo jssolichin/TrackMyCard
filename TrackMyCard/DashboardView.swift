@@ -1,5 +1,6 @@
 import SwiftUI
 import SwiftData
+import WidgetKit
 
 struct DashboardView: View {
     @Environment(\.modelContext) private var modelContext
@@ -18,7 +19,12 @@ struct DashboardView: View {
     private func groupedBenefits(_ benefits: [CardBenefit]) -> [BenefitGroup] {
         let groups = Dictionary(grouping: benefits, by: { $0.name })
         return groups.map { BenefitGroup(name: $0.key, benefits: $0.value) }
-            .sorted { $0.earliestResetDate < $1.earliestResetDate }
+            .sorted { 
+                if $0.earliestResetDate != $1.earliestResetDate {
+                    return $0.earliestResetDate < $1.earliestResetDate
+                }
+                return $0.name < $1.name
+            }
     }
 
     var body: some View {
@@ -56,6 +62,7 @@ struct DashboardView: View {
                                     modelContext.delete(benefit)
                                 }
                             }
+                            try? modelContext.save()
                         }
                     }
                 }
@@ -92,25 +99,16 @@ struct DashboardView: View {
                                     modelContext.delete(benefit)
                                 }
                             }
+                            try? modelContext.save()
                         }
                     }
                 }
                 
                 if benefits.isEmpty {
-                    ContentUnavailableView("No Benefits Tracked", systemImage: "creditcard.and.123", description: Text("Click on the second tab to add example benefits, or the + to add your own!"))
+                    ContentUnavailableView("No Benefits Tracked", systemImage: "creditcard.and.123", description: Text("Go to the Cards tab to add cards from the catalog or create your own custom card!"))
                 }
             }
             .navigationTitle("My Benefits")
-            .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button(action: { showingAddSheet = true }) {
-                        Label("Add Benefit", systemImage: "plus")
-                    }
-                }
-            }
-            .sheet(isPresented: $showingAddSheet) {
-                AddBenefitView()
-            }
             .onAppear {
                 refreshBenefits()
             }
@@ -144,6 +142,7 @@ struct BenefitGroup: Identifiable {
 }
 
 struct BenefitGroupSummaryRow: View {
+    @Environment(\.modelContext) private var modelContext
     let group: BenefitGroup
     let isExpanded: Bool
     let onToggleExpand: () -> Void
@@ -156,9 +155,27 @@ struct BenefitGroupSummaryRow: View {
                 
                 HStack(spacing: 6) {
                     HStack(spacing: -4) {
-                        let cardNames = Array(Set(group.benefits.compactMap { $0.userCard?.name ?? $0.cardName })).sorted().prefix(5)
-                        ForEach(Array(cardNames), id: \.self) { cardName in
-                            CardIconView(cardName: cardName, issuer: group.benefits.first(where: { ($0.userCard?.name ?? $0.cardName) == cardName })?.userCard?.issuer, size: 14)
+                        // Get unique physical cards or unique benefit sources
+                        let displayItems: [(id: PersistentIdentifier, name: String)] = {
+                            var items: [(id: PersistentIdentifier, name: String)] = []
+                            var seenCardIDs = Set<PersistentIdentifier>()
+                            
+                            for benefit in group.benefits {
+                                if let card = benefit.userCard {
+                                    if !seenCardIDs.contains(card.persistentModelID) {
+                                        seenCardIDs.insert(card.persistentModelID)
+                                        items.append((id: card.persistentModelID, name: card.name))
+                                    }
+                                } else {
+                                    // Standalone benefit without a card
+                                    items.append((id: benefit.persistentModelID, name: benefit.cardName))
+                                }
+                            }
+                            return Array(items.prefix(5))
+                        }()
+
+                        ForEach(displayItems, id: \.id) { item in
+                            CardIconView(cardName: item.name, size: 14)
                                 .overlay(
                                     RoundedRectangle(cornerRadius: 2)
                                         .stroke(.background, lineWidth: 1)
@@ -186,6 +203,8 @@ struct BenefitGroupSummaryRow: View {
                             benefit.isUsed = targetState
                         }
                     }
+                    try? modelContext.save()
+                    WidgetCenter.shared.reloadAllTimelines()
                 } label: {
                     Image(systemName: group.isAllUsed ? "checkmark.circle.fill" : "circle")
                         .resizable()
@@ -206,6 +225,7 @@ struct BenefitGroupSummaryRow: View {
 }
 
 struct BenefitRow: View {
+    @Environment(\.modelContext) private var modelContext
     @Bindable var benefit: CardBenefit
     var isChild: Bool = false
     
@@ -236,7 +256,7 @@ struct BenefitRow: View {
                 }
                 
                 HStack(spacing: 6) {
-                    CardIconView(cardName: benefit.userCard?.name ?? benefit.cardName, issuer: benefit.userCard?.issuer, size: 14)
+                    CardIconView(cardName: benefit.userCard?.name ?? benefit.cardName, size: 14)
                     
                     Text(benefit.period.rawValue)
                         .font(.caption2)
@@ -266,6 +286,8 @@ struct BenefitRow: View {
                         withAnimation {
                             benefit.isUsed.toggle()
                         }
+                        try? modelContext.save()
+                        WidgetCenter.shared.reloadAllTimelines()
                     } label: {
                         Image(systemName: benefit.isUsed ? "checkmark.circle.fill" : "circle")
                             .resizable()

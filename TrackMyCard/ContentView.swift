@@ -11,7 +11,7 @@ struct ContentView: View {
             
             AddCardView()
                 .tabItem {
-                    Label("Add Card", systemImage: "creditcard.circle")
+                    Label("Cards", systemImage: "creditcard.fill")
                 }
         }
     }

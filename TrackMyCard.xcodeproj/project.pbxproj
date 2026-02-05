@@ -72,7 +72,9 @@
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				CardBenefit.swift,
+				CardIconView.swift,
 				CardPresets.swift,
+				CardTheme.swift,
 				SharedModelContainer.swift,
 				UserCard.swift,
 			);

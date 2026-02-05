@@ -30,7 +30,7 @@ struct TrackMyCardTests {
     
     @Test func testUserCardRelationship() async throws {
         // Given
-        let userCard = UserCard(name: "Test Card", issuer: "Bank")
+        let userCard = UserCard(name: "Test Card")
         let benefit = CardBenefit(name: "Ben", cardName: "Test Card", amount: 10, period: .monthly)
         
         // Link

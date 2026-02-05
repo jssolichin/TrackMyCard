@@ -1,4 +1,5 @@
 import SwiftUI
+import WidgetKit
 
 struct AddBenefitView: View {
     @Environment(\.modelContext) private var modelContext
@@ -14,8 +15,8 @@ struct AddBenefitView: View {
         NavigationStack {
             Form {
                 Section(header: Text("Benefit Details")) {
-                    TextField("Benefit Name (e.g. Uber Cash)", text: $name)
-                    TextField("Card Name (e.g. Amex Platinum)", text: $cardName)
+                    TextField("Benefit Name (e.g. Ride Share Credit)", text: $name)
+                    TextField("Card Name (e.g. Elite Travel)", text: $cardName)
                     TextField("Amount", value: $amount, format: .currency(code: "USD"))
                         .keyboardType(.decimalPad)
                 }
@@ -58,6 +59,7 @@ struct AddBenefitView: View {
             notes: notes
         )
         modelContext.insert(newBenefit)
+        WidgetCenter.shared.reloadAllTimelines()
         dismiss()
     }
 }
