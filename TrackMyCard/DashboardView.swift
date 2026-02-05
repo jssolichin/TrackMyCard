@@ -9,11 +9,11 @@ struct DashboardView: View {
     @State private var expandedGroups: Set<String> = []
 
     var availableBenefits: [CardBenefit] {
-        benefits.filter { !$0.isUsed }
+        benefits.filter { !$0.isUsed && !($0.isHidden ?? false) }
     }
     
     var usedBenefits: [CardBenefit] {
-        benefits.filter { $0.isUsed }
+        benefits.filter { $0.isUsed && !($0.isHidden ?? false) }
     }
     
     private func groupedBenefits(_ benefits: [CardBenefit]) -> [BenefitGroup] {

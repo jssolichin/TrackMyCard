@@ -184,34 +184,37 @@ struct EditCardView: View {
                     TextField("Card Name", text: $name)
                 }
                 
-                Section("Benefits") {
-                    ForEach($benefits) { $benefit in
-                        VStack(alignment: .leading) {
-                            TextField("Benefit Name", text: $benefit.name)
-                                .font(.headline)
-                            HStack {
-                                TextField("Amount", value: $benefit.amount, format: .currency(code: "USD"))
-                                    .keyboardType(.decimalPad)
-                                Picker("", selection: $benefit.period) {
-                                    ForEach(BenefitPeriod.allCases) { period in
-                                        Text(period.rawValue).tag(period)
-                                    }
-                                }
-                            }
-                            TextField("Notes", text: $benefit.notes)
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                        }
-                        .padding(.vertical, 4)
+                let activeIndices = benefits.indices.filter { !benefits[$0].isHidden }
+                Section("Active Benefits") {
+                    ForEach(activeIndices, id: \.self) { index in
+                        benefitRow(for: $benefits[index])
                     }
                     .onDelete { indexSet in
-                        benefits.remove(atOffsets: indexSet)
+                        let indicesToRemove = indexSet.map { activeIndices[$0] }
+                        for index in indicesToRemove.sorted(by: >) {
+                            benefits.remove(at: index)
+                        }
                     }
                     
                     Button {
                         benefits.append(BenefitEditModel(name: "", amount: 0, period: .monthly, notes: ""))
                     } label: {
                         Label("Add Benefit", systemImage: "plus.circle")
+                    }
+                }
+                
+                let hiddenIndices = benefits.indices.filter { benefits[$0].isHidden }
+                if !hiddenIndices.isEmpty {
+                    Section("Hidden Benefits") {
+                        ForEach(hiddenIndices, id: \.self) { index in
+                            benefitRow(for: $benefits[index])
+                        }
+                        .onDelete { indexSet in
+                            let indicesToRemove = indexSet.map { hiddenIndices[$0] }
+                            for index in indicesToRemove.sorted(by: >) {
+                                benefits.remove(at: index)
+                            }
+                        }
                     }
                 }
             }
@@ -231,13 +234,40 @@ struct EditCardView: View {
         }
     }
     
+    @ViewBuilder
+    private func benefitRow(for benefit: Binding<BenefitEditModel>) -> some View {
+        VStack(alignment: .leading) {
+            HStack {
+                TextField("Benefit Name", text: benefit.name)
+                    .font(.headline)
+                Spacer()
+                Button {
+                    benefit.isHidden.wrappedValue.toggle()
+                } label: {
+                    Image(systemName: benefit.isHidden.wrappedValue ? "eye" : "eye.slash")
+                        .foregroundStyle(.blue)
+                }
+                .buttonStyle(.plain)
+            }
+            HStack {
+                TextField("Amount", value: benefit.amount, format: .currency(code: "USD"))
+                    .keyboardType(.decimalPad)
+                Picker("", selection: benefit.period) {
+                    ForEach(BenefitPeriod.allCases) { period in
+                        Text(period.rawValue).tag(period)
+                    }
+                }
+            }
+            TextField("Notes", text: benefit.notes)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+        }
+        .padding(.vertical, 4)
+    }
+    
     private func save() {
         if let card = existingCard {
             card.name = name
-            
-            // This is a bit complex with SwiftData relationships.
-            // Simplest for now: remove all benefits and re-add.
-            // Or match by ID.
             
             // Remove benefits not in the edit list
             let benefitIdsToKeep = Set(benefits.compactMap { $0.id })
@@ -254,13 +284,15 @@ struct EditCardView: View {
                     existingBenefit.amount = editModel.amount
                     existingBenefit.period = editModel.period
                     existingBenefit.notes = editModel.notes
+                    existingBenefit.isHidden = editModel.isHidden
                 } else {
                     let newBenefit = CardBenefit(
                         name: editModel.name,
                         cardName: name,
                         amount: editModel.amount,
                         period: editModel.period,
-                        notes: editModel.notes
+                        notes: editModel.notes,
+                        isHidden: editModel.isHidden
                     )
                     newBenefit.userCard = card
                     card.benefits.append(newBenefit)
@@ -275,7 +307,8 @@ struct EditCardView: View {
                     cardName: name,
                     amount: editModel.amount,
                     period: editModel.period,
-                    notes: editModel.notes
+                    notes: editModel.notes,
+                    isHidden: editModel.isHidden
                 )
                 newBenefit.userCard = newCard
                 newCard.benefits.append(newBenefit)
@@ -291,6 +324,7 @@ struct BenefitEditModel: Identifiable {
     var amount: Double
     var period: BenefitPeriod
     var notes: String
+    var isHidden: Bool
     
     init(benefit: CardBenefit) {
         self.id = benefit.persistentModelID
@@ -298,14 +332,16 @@ struct BenefitEditModel: Identifiable {
         self.amount = benefit.amount
         self.period = benefit.period
         self.notes = benefit.notes
+        self.isHidden = benefit.isHidden ?? false
     }
     
-    init(name: String, amount: Double, period: BenefitPeriod, notes: String) {
+    init(name: String, amount: Double, period: BenefitPeriod, notes: String, isHidden: Bool = false) {
         self.id = nil
         self.name = name
         self.amount = amount
         self.period = period
         self.notes = notes
+        self.isHidden = isHidden
     }
 }
 

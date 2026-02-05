@@ -23,8 +23,9 @@ final class CardBenefit {
     var lastUpdated: Date?
     var notes: String
     var userCard: UserCard?
+    var isHidden: Bool? = false
     
-    init(name: String, cardName: String, amount: Double, period: BenefitPeriod, nextResetDate: Date = Date(), isUsed: Bool = false, lastUpdated: Date? = nil, notes: String = "") {
+    init(name: String, cardName: String, amount: Double, period: BenefitPeriod, nextResetDate: Date = Date(), isUsed: Bool = false, lastUpdated: Date? = nil, notes: String = "", isHidden: Bool = false) {
         self.name = name
         self.cardName = cardName
         self.amount = amount
@@ -33,6 +34,7 @@ final class CardBenefit {
         self.isUsed = isUsed
         self.lastUpdated = lastUpdated
         self.notes = notes
+        self.isHidden = isHidden
     }
 }
 

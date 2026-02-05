@@ -25,6 +25,15 @@ struct SharedModelContainer {
         do {
             return try ModelContainer(for: schema, configurations: [modelConfiguration])
         } catch {
+            print("Failed to create ModelContainer: \(error)")
+            // If you are seeing this error after a model change, you may need to delete the app from your simulator/device and run again.
+            // Alternatively, for development, you could uncomment the following to auto-delete the store on failure:
+            /*
+            if let url = modelConfiguration.url {
+                try? FileManager.default.removeItem(at: url)
+                return try! ModelContainer(for: schema, configurations: [modelConfiguration])
+            }
+            */
             fatalError("Could not create ModelContainer: \(error)")
         }
     }

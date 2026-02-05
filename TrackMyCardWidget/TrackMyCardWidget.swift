@@ -35,8 +35,9 @@ struct Provider: TimelineProvider {
             let context = ModelContext(modelContainer)
             let allBenefits = try context.fetch(descriptor)
             
-            // Filter: Not used OR (Used and updated recently)
+            // Filter: (Not hidden) AND (Not used OR (Used and updated recently))
             let filteredBenefits = allBenefits.filter { benefit in
+                if benefit.isHidden ?? false { return false }
                 if !benefit.isUsed { return true }
                 if let lastUpdated = benefit.lastUpdated {
                     return currentDate.timeIntervalSince(lastUpdated) < 1.5
@@ -76,8 +77,9 @@ struct Provider: TimelineProvider {
             let context = ModelContext(modelContainer)
             let allBenefits = try context.fetch(descriptor)
             
-            // Filter: Not used OR (Used and updated recently)
+            // Filter: (Not hidden) AND (Not used OR (Used and updated recently))
             let filteredBenefits = allBenefits.filter { benefit in
+                if benefit.isHidden ?? false { return false }
                 if !benefit.isUsed { return true }
                 if let lastUpdated = benefit.lastUpdated {
                     return currentDate.timeIntervalSince(lastUpdated) < 1.5

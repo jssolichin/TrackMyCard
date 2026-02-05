@@ -18,7 +18,7 @@ struct CardPresets {
     static let all: [CardTemplate] = [
         CardTemplate(name: "Platinum", benefits: [
             BenefitTemplate(name: "Hotel Credit", amount: 600, period: .semiAnnually, notes: "$300 Jan-Jun and $300 Jul-Dec for FHR/Hotel Collection (prepaid)."),
-            BenefitTemplate(name: "Resy Dining Credit", amount: 100, period: .quarterly, notes: "$100 quarterly credit for eligible Resy restaurants ($400/yr)."),
+            BenefitTemplate(name: "Resy Credit", amount: 100, period: .quarterly, notes: "$100 quarterly credit for eligible Resy restaurants ($400/yr)."),
             BenefitTemplate(name: "Lululemon Credit", amount: 75, period: .quarterly, notes: "$75 quarterly credit for in-store or online Lululemon purchases ($300/yr)."),
             BenefitTemplate(name: "Oura Ring Credit", amount: 200, period: .annually, notes: "One-time annual credit toward Oura Ring purchases."),
             BenefitTemplate(name: "Digital Entertainment", amount: 25, period: .monthly, notes: "Disney+, Hulu, ESPN+, Peacock, NYT, WSJ, YouTube Premium ($300/yr)."),
