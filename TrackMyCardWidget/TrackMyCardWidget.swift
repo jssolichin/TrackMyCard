@@ -173,7 +173,7 @@ struct TrackMyCardWidgetEntryView : View {
 
     var body: some View {
         let isSmall = family == .systemSmall
-        VStack(alignment: .leading, spacing: isSmall ? 4 : 6) {
+        VStack(alignment: .leading, spacing: 4) {
             HStack {
                 Text("Upcoming")
                     .font(.system(size: isSmall ? 9 : 10, weight: .bold))
@@ -190,12 +190,12 @@ struct TrackMyCardWidgetEntryView : View {
                 Spacer()
             } else {
                 let displayCount = 4
-                VStack(alignment: .leading, spacing: isSmall ? 2 : 4) {
+                VStack(alignment: .leading, spacing: 4) {
                     ForEach(entry.benefits.prefix(displayCount)) { benefit in
                         WidgetBenefitRow(benefit: benefit, isCompact: isSmall)
                         if benefit.id != entry.benefits.prefix(displayCount).last?.id {
                             Divider()
-                                .opacity(isSmall ? 0.5 : 1.0)
+                                .opacity(isSmall ? 0.5 : 0.7)
                         }
                     }
                 }
@@ -203,8 +203,7 @@ struct TrackMyCardWidgetEntryView : View {
             
             Spacer(minLength: 0)
         }
-        .padding(.horizontal, isSmall ? 8 : 12)
-        .padding(.vertical, 14)
+        .padding(.top, isSmall ? 8 : 12)
         .containerBackground(for: .widget) {
             Color(UIColor.systemBackground)
         }
@@ -270,7 +269,6 @@ struct TrackMyCardWidget: Widget {
         .configurationDisplayName("Upcoming Benefit")
         .description("Shows the benefit that expires soonest.")
         .supportedFamilies([.systemSmall, .systemMedium])
-        .contentMarginsDisabled()
     }
 }
 

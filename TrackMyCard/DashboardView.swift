@@ -34,35 +34,50 @@ struct DashboardView: View {
                     Section(header: Text("Available")) {
                         let groups = groupedBenefits(availableBenefits)
                         ForEach(groups) { group in
-                            if group.benefits.count > 1 {
-                                VStack(alignment: .leading, spacing: 0) {
-                                    BenefitGroupSummaryRow(group: group, isExpanded: expandedGroups.contains(group.id)) {
+                            Group {
+                                if group.benefits.count > 1 {
+                                    VStack(alignment: .leading, spacing: 0) {
+                                        BenefitGroupSummaryRow(group: group, isExpanded: expandedGroups.contains(group.id)) {
+                                            if expandedGroups.contains(group.id) {
+                                                expandedGroups.remove(group.id)
+                                            } else {
+                                                expandedGroups.insert(group.id)
+                                            }
+                                        }
+                                        
                                         if expandedGroups.contains(group.id) {
-                                            expandedGroups.remove(group.id)
-                                        } else {
-                                            expandedGroups.insert(group.id)
+                                            ForEach(group.benefits.sorted { $0.nextResetDate < $1.nextResetDate }) { benefit in
+                                                BenefitRow(benefit: benefit, isChild: true)
+                                                    .padding(.leading, 10)
+                                                    .swipeActions(edge: .trailing) {
+                                                        Button {
+                                                            benefit.isHidden = true
+                                                            try? modelContext.save()
+                                                            WidgetCenter.shared.reloadAllTimelines()
+                                                        } label: {
+                                                            Label("Hide", systemImage: "eye.slash")
+                                                        }
+                                                        .tint(.gray)
+                                                    }
+                                            }
                                         }
                                     }
-                                    
-                                    if expandedGroups.contains(group.id) {
-                                        ForEach(group.benefits.sorted { $0.nextResetDate < $1.nextResetDate }) { benefit in
-                                            BenefitRow(benefit: benefit, isChild: true)
-                                                .padding(.leading, 10)
-                                        }
+                                } else {
+                                    BenefitRow(benefit: group.benefits[0])
+                                }
+                            }
+                            .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+                                Button {
+                                    for benefit in group.benefits {
+                                        benefit.isHidden = true
                                     }
+                                    try? modelContext.save()
+                                    WidgetCenter.shared.reloadAllTimelines()
+                                } label: {
+                                    Label("Hide", systemImage: "eye.slash")
                                 }
-                            } else {
-                                BenefitRow(benefit: group.benefits[0])
+                                .tint(.gray)
                             }
-                        }
-                        .onDelete { indexSet in
-                            for index in indexSet {
-                                let group = groups[index]
-                                for benefit in group.benefits {
-                                    modelContext.delete(benefit)
-                                }
-                            }
-                            try? modelContext.save()
                         }
                     }
                 }
@@ -71,35 +86,50 @@ struct DashboardView: View {
                     Section(header: Text("Used")) {
                         let groups = groupedBenefits(usedBenefits)
                         ForEach(groups) { group in
-                            if group.benefits.count > 1 {
-                                VStack(alignment: .leading, spacing: 0) {
-                                    BenefitGroupSummaryRow(group: group, isExpanded: expandedGroups.contains(group.id)) {
+                            Group {
+                                if group.benefits.count > 1 {
+                                    VStack(alignment: .leading, spacing: 0) {
+                                        BenefitGroupSummaryRow(group: group, isExpanded: expandedGroups.contains(group.id)) {
+                                            if expandedGroups.contains(group.id) {
+                                                expandedGroups.remove(group.id)
+                                            } else {
+                                                expandedGroups.insert(group.id)
+                                            }
+                                        }
+                                        
                                         if expandedGroups.contains(group.id) {
-                                            expandedGroups.remove(group.id)
-                                        } else {
-                                            expandedGroups.insert(group.id)
+                                            ForEach(group.benefits.sorted { $0.nextResetDate < $1.nextResetDate }) { benefit in
+                                                BenefitRow(benefit: benefit, isChild: true)
+                                                    .padding(.leading, 10)
+                                                    .swipeActions(edge: .trailing) {
+                                                        Button {
+                                                            benefit.isHidden = true
+                                                            try? modelContext.save()
+                                                            WidgetCenter.shared.reloadAllTimelines()
+                                                        } label: {
+                                                            Label("Hide", systemImage: "eye.slash")
+                                                        }
+                                                        .tint(.gray)
+                                                    }
+                                            }
                                         }
                                     }
-                                    
-                                    if expandedGroups.contains(group.id) {
-                                        ForEach(group.benefits.sorted { $0.nextResetDate < $1.nextResetDate }) { benefit in
-                                            BenefitRow(benefit: benefit, isChild: true)
-                                                .padding(.leading, 10)
-                                        }
+                                } else {
+                                    BenefitRow(benefit: group.benefits[0])
+                                }
+                            }
+                            .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+                                Button {
+                                    for benefit in group.benefits {
+                                        benefit.isHidden = true
                                     }
+                                    try? modelContext.save()
+                                    WidgetCenter.shared.reloadAllTimelines()
+                                } label: {
+                                    Label("Hide", systemImage: "eye.slash")
                                 }
-                            } else {
-                                BenefitRow(benefit: group.benefits[0])
+                                .tint(.gray)
                             }
-                        }
-                        .onDelete { indexSet in
-                            for index in indexSet {
-                                let group = groups[index]
-                                for benefit in group.benefits {
-                                    modelContext.delete(benefit)
-                                }
-                            }
-                            try? modelContext.save()
                         }
                     }
                 }
