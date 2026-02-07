@@ -24,9 +24,7 @@ struct Provider: TimelineProvider {
         ])
     }
 
-    func getSnapshot(in context: Context, completion: @escaping (SimpleEntry) -> ()) {
-        let currentDate = Date()
-        // Fetch all benefits and filter in memory to handle complex "unused OR recently used" logic
+    private func fetchBenefits(for date: Date) -> [WidgetBenefit] {
         let descriptor = FetchDescriptor<CardBenefit>(
             sortBy: [SortDescriptor(\.nextResetDate)]
         )
@@ -40,14 +38,14 @@ struct Provider: TimelineProvider {
                 if benefit.isHidden ?? false { return false }
                 if !benefit.isUsed { return true }
                 if let lastUpdated = benefit.lastUpdated {
-                    return currentDate.timeIntervalSince(lastUpdated) < 1.5
+                    return date.timeIntervalSince(lastUpdated) < 1.5
                 }
                 return false
             }
             
-            let widgetBenefits = filteredBenefits.prefix(10).map { benefit in
+            return filteredBenefits.prefix(10).map { benefit in
                 let calendar = Calendar.current
-                let components = calendar.dateComponents([.day], from: currentDate, to: benefit.nextResetDate)
+                let components = calendar.dateComponents([.day], from: date, to: benefit.nextResetDate)
                 let days = components.day ?? 0
                 return WidgetBenefit(
                     id: benefit.persistentModelID.widgetID,
@@ -59,63 +57,29 @@ struct Provider: TimelineProvider {
                     isUsed: benefit.isUsed
                 )
             }
-            
-            let entry = SimpleEntry(date: currentDate, benefits: Array(widgetBenefits))
-            completion(entry)
         } catch {
-            completion(placeholder(in: context))
+            return []
         }
+    }
+
+    func getSnapshot(in context: Context, completion: @escaping (SimpleEntry) -> ()) {
+        let currentDate = Date()
+        let benefits = fetchBenefits(for: currentDate)
+        let entry = SimpleEntry(date: currentDate, benefits: benefits)
+        completion(entry)
     }
 
     func getTimeline(in context: Context, completion: @escaping (Timeline<Entry>) -> ()) {
         let currentDate = Date()
-        let descriptor = FetchDescriptor<CardBenefit>(
-            sortBy: [SortDescriptor(\.nextResetDate)]
-        )
+        let benefits = fetchBenefits(for: currentDate)
+        let entry = SimpleEntry(date: currentDate, benefits: benefits)
         
-        do {
-            let context = ModelContext(modelContainer)
-            let allBenefits = try context.fetch(descriptor)
-            
-            // Filter: (Not hidden) AND (Not used OR (Used and updated recently))
-            let filteredBenefits = allBenefits.filter { benefit in
-                if benefit.isHidden ?? false { return false }
-                if !benefit.isUsed { return true }
-                if let lastUpdated = benefit.lastUpdated {
-                    return currentDate.timeIntervalSince(lastUpdated) < 1.5
-                }
-                return false
-            }
-            
-            let widgetBenefits = filteredBenefits.prefix(10).map { benefit in
-                let calendar = Calendar.current
-                let components = calendar.dateComponents([.day], from: currentDate, to: benefit.nextResetDate)
-                let days = components.day ?? 0
-                return WidgetBenefit(
-                    id: benefit.persistentModelID.widgetID,
-                    name: benefit.name,
-                    cardName: benefit.userCard?.name ?? benefit.cardName,
-                    amount: benefit.amount,
-                    daysRemaining: days,
-                    isUrgent: days <= 5,
-                    isUsed: benefit.isUsed
-                )
-            }
-            
-            let entry = SimpleEntry(date: currentDate, benefits: Array(widgetBenefits))
-            
-            // If we have any "recently used" items, we want to refresh quickly to remove them
-            let hasRecentlyUsed = filteredBenefits.contains { $0.isUsed }
-            let nextUpdate = hasRecentlyUsed ? currentDate.addingTimeInterval(1.5) : Calendar.current.date(byAdding: .minute, value: 30, to: currentDate)!
-            
-            let timeline = Timeline(entries: [entry], policy: .after(nextUpdate))
-            completion(timeline)
-        } catch {
-            let entry = SimpleEntry(date: currentDate, benefits: [])
-            let nextUpdate = Calendar.current.date(byAdding: .minute, value: 30, to: currentDate)!
-            let timeline = Timeline(entries: [entry], policy: .after(nextUpdate))
-            completion(timeline)
-        }
+        // If we have any "recently used" items, we want to refresh quickly to remove them
+        let hasRecentlyUsed = benefits.contains { $0.isUsed }
+        let nextUpdate = hasRecentlyUsed ? currentDate.addingTimeInterval(1.5) : Calendar.current.date(byAdding: .minute, value: 30, to: currentDate)!
+        
+        let timeline = Timeline(entries: [entry], policy: .after(nextUpdate))
+        completion(timeline)
     }
 }
 
