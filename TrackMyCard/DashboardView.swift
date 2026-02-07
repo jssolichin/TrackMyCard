@@ -34,7 +34,7 @@ struct DashboardView: View {
                 BenefitSection(title: "Used", benefits: usedBenefits, expandedGroups: $expandedGroups)
                 
                 if benefits.isEmpty {
-                    ContentUnavailableView("No Benefits Tracked", systemImage: "creditcard.and.123", description: Text("Go to the Cards tab to add cards from the catalog or create your own custom card!"))
+                    ContentUnavailableView("No Benefits Tracked", systemImage: "creditcard.and.123", description: Text("Go to the Cards tab to start adding benefits to track!"))
                 }
             }
             .navigationTitle("My Benefits")

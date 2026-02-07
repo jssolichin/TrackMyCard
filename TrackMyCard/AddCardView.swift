@@ -11,6 +11,7 @@ struct AddCardView: View {
     @State private var pendingTemplate: CardTemplate?
     @State private var showingAddConfirmation = false
     @State private var showingRemoveConfirmation = false
+    @State private var showingInfo = false
 
     var body: some View {
         NavigationStack {
@@ -101,17 +102,35 @@ struct AddCardView: View {
                 }
                 
                 Section {
-                    Text("Benefits and terms can change. Please verify the most up-to-date information.")
-                        .font(.caption2)
-                        .foregroundStyle(.secondary)
-                        .multilineTextAlignment(.center)
-                        .frame(maxWidth: .infinity)
-                        .listRowBackground(Color.clear)
+                    VStack(spacing: 12) {
+                        Text("Template data is manually curated. It may contain errors. Please cross-reference with your cardmember agreement before relying on these dates or amounts.")
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                            .multilineTextAlignment(.center)
+                            .fixedSize(horizontal: false, vertical: true)
+                        
+                        Button {
+                            showingInfo = true
+                        } label: {
+                            Text("Learn More & Disclaimers")
+                                .font(.caption2)
+                                .fontWeight(.semibold)
+                        }
+                    }
+                    .frame(maxWidth: .infinity)
+                    .listRowBackground(Color.clear)
                 }
             }
             .navigationTitle("Manage Cards")
             .toolbar {
-                EditButton()
+                ToolbarItem(placement: .topBarTrailing) {
+                    EditButton()
+                }
+            }
+            .sheet(isPresented: $showingInfo) {
+                IntroGuideView {
+                    showingInfo = false
+                }
             }
             .sheet(isPresented: $showingCustomCardSheet) {
                 EditCardView(card: nil)

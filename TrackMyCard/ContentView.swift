@@ -2,6 +2,9 @@ import SwiftUI
 import SwiftData
 
 struct ContentView: View {
+    @AppStorage("hasSeenDisclaimer") private var hasSeenDisclaimer = false
+    @State private var showingIntro = false
+
     var body: some View {
         TabView {
             DashboardView()
@@ -13,6 +16,17 @@ struct ContentView: View {
                 .tabItem {
                     Label("Cards", systemImage: "creditcard.fill")
                 }
+        }
+        .onAppear {
+            if !hasSeenDisclaimer {
+                showingIntro = true
+            }
+        }
+        .fullScreenCover(isPresented: $showingIntro) {
+            IntroGuideView {
+                hasSeenDisclaimer = true
+                showingIntro = false
+            }
         }
     }
 }
